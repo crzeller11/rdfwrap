@@ -29,6 +29,8 @@ class NXRDF:
         return self.rdf.query(sqarql)
     def to_dot(self):
         return to_agraph(self.nx)
+    def write_png(self, filename):
+        to_agraph(self.nx).draw(filename, format='png', prog='dot')
 
 def main():
     # create example graph
