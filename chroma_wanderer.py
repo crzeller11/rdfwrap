@@ -24,7 +24,6 @@ class KNN:
                 color = Color.from_hex(hexstr)
                 colors.append((color, name))
         colors = list(reversed(colors))
-        color_names = OrderedDict(colors)
         return KNN(color for color, name in colors[:limit])
 
 def step(color, max_dist=8):

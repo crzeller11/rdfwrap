@@ -12,7 +12,7 @@ class NXRDF:
     def add_edge(self, parent, label, child, **kwargs):
         assert isinstance(parent, BNode)
         assert isinstance(label, str)
-        if not (isinstance(child, BNode) or isinstance(child, Literal)):
+        if not isinstance(child, (BNode, Literal)):
             child = self.add_literal(child)
         self.rdf.add((parent, NXRDF.NAMESPACE[label], child))
         self.nx.add_edge(parent, child, label=label, **kwargs)
