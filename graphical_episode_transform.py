@@ -4,11 +4,18 @@ from chroma_wanderer import walk
 def graphical_episode_transform(): # takes in list of colors
     g = NXRDF()
     colors = walk(10) # list of 10 colors
-    edges = ['red', 'green', 'blue', 'time', 'type', 'episode']
-    for color in colors:
-        color = g.add_node(color)
-        for edge in edges:
-            g.add_edge(color, edge, '')
+
+    for time, color in enumerate(colors):
+        node = g.add_node()
+        g.add_edge(node, 'time', time)
+        g.add_edge(node, 'color_code', color)
+        g.add_edge(node, 'color_name', '') # isolate color name from color-centroids
+        g.add_edge(node, 'red', '') # how to get the RGB values of the color?
+        g.add_edge(node, 'green', '')
+        g.add_edge(node, 'blue', '')
+        g.add_edge(node, 'type', 'color')
+        g.add_edge(node, 'episode', '') # what is the difference between time and episode?
+
     print(g.to_dot())
     g.write_png('temp.png')
 
@@ -24,7 +31,7 @@ Possible edges:
 - green
 - blue
 - type
--episode
+- episode
 
 Color episodes that uses the graph library and creates the same graph with disconnecting components like the ones
 listed above

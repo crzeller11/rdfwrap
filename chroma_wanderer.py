@@ -62,5 +62,6 @@ def main():
         print(time, color)
 
 
+
 if __name__ == '__main__':
     main()
