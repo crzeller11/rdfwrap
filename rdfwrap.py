@@ -140,5 +140,6 @@ def main():
     for row in qres:
         print(row)
 
+
 if __name__ == '__main__':
     main()

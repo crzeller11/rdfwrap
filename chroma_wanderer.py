@@ -55,9 +55,12 @@ def walk(n, start=None):
         cur_color = step(cur_color)
     return result
 
+
+
 def main():
     for time, color in enumerate(walk(10)):
         print(time, color)
+
 
 if __name__ == '__main__':
     main()
