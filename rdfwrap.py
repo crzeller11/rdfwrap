@@ -13,6 +13,7 @@ class NXRDF:
         assert isinstance(parent, BNode)
         assert isinstance(label, str)
         if not isinstance(child, (BNode, Literal)):
+            assert child != '', 'Child node cannot be the empty string'
             child = self.add_literal(child)
         self.rdf.add((parent, NXRDF.NAMESPACE[label], child))
         self.nx.add_edge(parent, child, label=label, **kwargs)
