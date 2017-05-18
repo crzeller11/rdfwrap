@@ -62,20 +62,14 @@ def create_knn(num_colors, k, graph=None):
     for color in colors:
         color_node = graph.add_node()
         node_map[color] = color_node
-        graph.add_edge(color_node, "name", graph.add_literal(color.name))
-        graph.add_edge(color_node, "hexcode", graph.add_literal(str(color)))
-        graph.add_edge(color_node, "r", graph.add_literal(color.r))
-        graph.add_edge(color_node, "g", graph.add_literal(color.g))
-        graph.add_edge(color_node, "b", graph.add_literal(color.b))
+        graph.add_edge(color_node, 'name', graph.add_literal(color.name))
+        graph.add_edge(color_node, 'hexcode', graph.add_literal(str(color)))
+        graph.add_edge(color_node, 'r', graph.add_literal(color.r))
+        graph.add_edge(color_node, 'g', graph.add_literal(color.g))
+        graph.add_edge(color_node, 'b', graph.add_literal(color.b))
     for color in colors:
         neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
         neighbors = sorted(neighbors, key=(lambda kv: kv[1]))[:k]
         for neighbor, distance in neighbors:
-            graph.add_edge(node_map[color], "near", node_map[neighbor])
-    print(graph.to_dot())
-
-def main():
-    create_knn(10, 3)
-
-if __name__ == '__main__':
-    main()
+            graph.add_edge(node_map[color], 'near', node_map[neighbor])
+    return graph
