@@ -1,8 +1,5 @@
 .INTERMEDIATE: color-survey.sqlite mainsurvey_sqldump.txt colorsurvey.tar.gz
 
-color-distances: color-centroids.tsv
-	python3 color.py
-
 color-centroids.tsv: color-survey.sqlite
 	python3 create_tsv.py
 

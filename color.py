@@ -1,16 +1,17 @@
-from ast import literal_eval
-from os.path import dirname, exists as file_exists, join as join_path, realpath
+from os.path import dirname, join as join_path, realpath
+
+from rdfwrap import NXRDF
 
 DIRECTORY = dirname(realpath(__file__))
 
 COLOR_NAMES_FILE = join_path(DIRECTORY, 'color-centroids.tsv')
-COLOR_DISTANCES_FILE = join_path(DIRECTORY, 'color-distances')
 
 class Color:
-    def __init__(self, r, g, b):
+    def __init__(self, r, g, b, name=None):
         self.r = r
         self.g = g
         self.b = b
+        self.name = name
     def __hash__(self):
         return hash(str(self))
     def __str__(self):
@@ -22,61 +23,59 @@ class Color:
     def __sub__(self, other):
         return abs(self.r - other.r) + abs(self.g - other.g) + abs(self.b - other.b)
     @staticmethod
-    def from_hex(hexstr):
-        if len(hexstr) == 7 and hexstr[0] == '#':
-            hexstr = hexstr[1:]
-        return Color(*(int(hexstr[i:i+2], 16) for i in range(0, 5, 2)))
+    def from_hex(hexcode, name=None):
+        if len(hexcode) == 7 and hexcode[0] == '#':
+            hexcode = hexcode[1:]
+        return Color(*(int(hexcode[i:i+2], 16) for i in range(0, 5, 2)), name=name)
 
-def create_distances():
+def read_colors():
     colors = []
     with open(COLOR_NAMES_FILE) as fd:
         for line in fd:
             line = line.strip()
             if line[0] == '#':
                 continue
-            count, name, hexstr = line.split('\t')
-            color = Color.from_hex(hexstr)
-            others = []
-            for other, distances in colors:
-                others.append([other, color - other])
-            others = sorted(others, key=(lambda pair: pair[1]))
-            colors.append([color, others])
+            count, name, hexcode = line.split('\t')
+            colors.append(Color.from_hex(hexcode, name))
     return colors
 
-def write_distances(colors):
-    str_colors = []
-    for color, distances in colors:
-        str_distances = []
-        for other, distance in distances:
-            str_distances.append([str(other), distance])
-        str_colors.append([str(color), str_distances])
-    with open(COLOR_DISTANCES_FILE, 'w') as fd:
-        fd.write(repr(str_colors))
+def create_knn_dot(num_colors, k):
+    dot = []
+    dot.append('digraph {')
+    dot.append('  layout="neato"')
+    dot.append('  overlap="scalexy"')
+    colors = read_colors()[:num_colors]
+    for color in colors:
+        dot.append('  "{hexcode}" [label="{name}\\n{hexcode}", style="filled", fillcolor="{hexcode}"]'.format(name=color.name, hexcode=str(color)))
+        neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
+        neighbors = sorted(neighbors, key=(lambda kv: kv[1]))[:k]
+        for neighbor, distance in neighbors:
+            dot.append('  "{}" -> "{}" [label="{}"]'.format(str(color), str(neighbor), distance))
+    dot.append('}')
+    return '\n'.join(dot)
 
-def read_distances():
-    with open(COLOR_DISTANCES_FILE) as fd:
-        colors = []
-        str_colors = literal_eval(fd.read())
-        for str_color, str_distances in str_colors:
-            color = Color.from_hex(str_color)
-            distances = []
-            for str_other, distance in str_distances:
-                other = Color.from_hex(str_other)
-                distances.append([other, distance])
-            colors.append([color, distances])
-        return colors
-
-def get_distances():
-    if file_exists(COLOR_DISTANCES_FILE):
-        return read_distances()
-    elif file_exists(COLOR_NAMES_FILE):
-        distances = create_distances()
-        write_distances(distances)
-        return distances
-    assert False, 'Cannot find color information'
+def create_knn(num_colors, k, graph=None):
+    if graph is None:
+        graph = NXRDF()
+    colors = read_colors()[:num_colors]
+    node_map = {}
+    for color in colors:
+        color_node = graph.add_node()
+        node_map[color] = color_node
+        graph.add_edge(color_node, "name", graph.add_literal(color.name))
+        graph.add_edge(color_node, "hexcode", graph.add_literal(str(color)))
+        graph.add_edge(color_node, "r", graph.add_literal(color.r))
+        graph.add_edge(color_node, "g", graph.add_literal(color.g))
+        graph.add_edge(color_node, "b", graph.add_literal(color.b))
+    for color in colors:
+        neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
+        neighbors = sorted(neighbors, key=(lambda kv: kv[1]))[:k]
+        for neighbor, distance in neighbors:
+            graph.add_edge(node_map[color], "near", node_map[neighbor])
+    print(graph.to_dot())
 
 def main():
-    get_distances()
+    create_knn(10, 3)
 
 if __name__ == '__main__':
     main()
