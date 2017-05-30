@@ -1,6 +1,6 @@
 .INTERMEDIATE: color-survey.sqlite mainsurvey_sqldump.txt colorsurvey.tar.gz
 
-color-centroids.tsv: color-survey.sqlite
+color-centroids.tsv: create_tsv.py color-survey.sqlite
 	python3 create_tsv.py
 
 color-survey.sqlite: mainsurvey_sqldump.txt
