@@ -39,12 +39,14 @@ def read_colors():
             colors.append(Color.from_hex(hexcode, name))
     return colors
 
+COLOR_CACHE = read_colors()
+
 def create_knn_dot(num_colors, k):
     dot = []
     dot.append('digraph {')
     dot.append('  layout="neato"')
     dot.append('  overlap="scalexy"')
-    colors = read_colors()[:num_colors]
+    colors = COLOR_CACHE[:num_colors]
     for color in colors:
         dot.append('  "{hexcode}" [label="{name}\\n{hexcode}", style="filled", fillcolor="{hexcode}"]'.format(name=color.name, hexcode=str(color)))
         neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
@@ -57,7 +59,7 @@ def create_knn_dot(num_colors, k):
 def create_knn(num_colors, k, graph=None):
     if graph is None:
         graph = NXRDF()
-    colors = read_colors()[:num_colors]
+    colors = COLOR_CACHE[:num_colors]
     node_map = {}
     for color in colors:
         color_node = graph.add_node()
