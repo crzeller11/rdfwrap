@@ -1,6 +1,7 @@
 from random import randrange, seed as set_seed
 
-from color import Color
+from color import Color, closest_color
+from rdfwrap import NXRDF
 
 def step(color, max_dist=8):
     rand = randrange(3)
@@ -41,7 +42,18 @@ def random_colors(n, seed=None):
         result.append(Color(randrange(256), randrange(256), randrange(256)))
     return result
 
-
+def color_episodes(colors, num_labels):
+    g = NXRDF()
+    for time, color in enumerate(colors):
+        node = g.add_node()
+        g.add_edge(node, 'episode', time)
+        g.add_edge(node, 'color_code', color)
+        g.add_edge(node, 'color_name', closest_color(color, num_labels).name)
+        g.add_edge(node, 'red', color.r)
+        g.add_edge(node, 'green', color.g)
+        g.add_edge(node, 'blue', color.b)
+        g.add_edge(node, 'type', 'color')
+    return g
 
 def main():
     for time, color in enumerate(random_walk(10, seed=8675309)):
