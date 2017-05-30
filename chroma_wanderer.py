@@ -20,7 +20,7 @@ def step(color, max_dist=8):
             new_primary = color.b + randrange(-max_dist, max_dist + 1)
         return Color(color.r, color.g, new_primary)
 
-def walk(n, start=None, seed=None):
+def random_walk(n, start=None, seed=None):
     if seed is not None:
         set_seed(seed)
     if start is None:
@@ -33,13 +33,19 @@ def walk(n, start=None, seed=None):
         cur_color = step(cur_color)
     return result
 
+def random_colors(n, seed=None):
+    if seed is not None:
+        set_seed(seed)
+    result = []
+    for i in range(n):
+        result.append(Color(randrange(256), randrange(256), randrange(256)))
+    return result
+
 
 
 def main():
-    for time, color in enumerate(walk(10)):
+    for time, color in enumerate(random_walk(10, seed=8675309)):
         print(time, color)
-
-
 
 if __name__ == '__main__':
     main()
