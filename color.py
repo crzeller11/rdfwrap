@@ -73,7 +73,7 @@ def create_knn(num_colors, k, graph=None):
         neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
         neighbors = sorted(neighbors, key=(lambda kv: kv[1]))[:k]
         for neighbor, distance in neighbors:
-            graph.add_edge(node_map[color], 'near', node_map[neighbor])
+            graph.add_edge(node_map[color], 'neighbor', node_map[neighbor])
     return graph
 
 def closest_color(color, num_colors):
