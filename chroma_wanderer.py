@@ -1,4 +1,4 @@
-from random import randrange
+from random import randrange, seed as set_seed
 
 from color import Color
 
@@ -20,7 +20,9 @@ def step(color, max_dist=8):
             new_primary = color.b + randrange(-max_dist, max_dist + 1)
         return Color(color.r, color.g, new_primary)
 
-def walk(n, start=None):
+def walk(n, start=None, seed=None):
+    if seed is not None:
+        set_seed(seed)
     if start is None:
         cur_color = Color(randrange(256), randrange(256), randrange(256))
     else:
