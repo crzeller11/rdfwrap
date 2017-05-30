@@ -75,3 +75,6 @@ def create_knn(num_colors, k, graph=None):
         for neighbor, distance in neighbors:
             graph.add_edge(node_map[color], 'near', node_map[neighbor])
     return graph
+
+def closest_color(color, num_colors):
+    return min(COLOR_CACHE[:num_colors], key=(lambda neighbor: neighbor - color))
