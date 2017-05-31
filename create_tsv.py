@@ -13,7 +13,7 @@ cursor = conn.cursor()
 
 colors = defaultdict(Counter)
 for answer in cursor.execute(QUERY):
-    colors[answer.name].update([Color(answer.r, answer.g, answer.b)])
+    colors[answer.name.replace('-', ' ')].update([Color(answer.r, answer.g, answer.b)])
 centroids = {}
 for name, rgbs in colors.items():
     count = sum(rgbs.values())

@@ -39,12 +39,14 @@ def read_colors():
             colors.append(Color.from_hex(hexcode, name))
     return colors
 
+COLOR_CACHE = read_colors()
+
 def create_knn_dot(num_colors, k):
     dot = []
     dot.append('digraph {')
     dot.append('  layout="neato"')
     dot.append('  overlap="scalexy"')
-    colors = read_colors()[:num_colors]
+    colors = COLOR_CACHE[:num_colors]
     for color in colors:
         dot.append('  "{hexcode}" [label="{name}\\n{hexcode}", style="filled", fillcolor="{hexcode}"]'.format(name=color.name, hexcode=str(color)))
         neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
@@ -57,7 +59,7 @@ def create_knn_dot(num_colors, k):
 def create_knn(num_colors, k, graph=None):
     if graph is None:
         graph = NXRDF()
-    colors = read_colors()[:num_colors]
+    colors = COLOR_CACHE[:num_colors]
     node_map = {}
     for color in colors:
         color_node = graph.add_node()
@@ -71,5 +73,8 @@ def create_knn(num_colors, k, graph=None):
         neighbors = [[neighbor, color - neighbor] for neighbor in colors if neighbor != color]
         neighbors = sorted(neighbors, key=(lambda kv: kv[1]))[:k]
         for neighbor, distance in neighbors:
-            graph.add_edge(node_map[color], 'near', node_map[neighbor])
+            graph.add_edge(node_map[color], 'neighbor', node_map[neighbor])
     return graph
+
+def closest_color(color, num_colors):
+    return min(COLOR_CACHE[:num_colors], key=(lambda neighbor: neighbor - color))

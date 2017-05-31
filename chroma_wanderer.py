@@ -1,30 +1,7 @@
-from collections import OrderedDict
-from random import randrange
+from random import randrange, seed as set_seed
 
-from color import Color
-
-class KNN:
-    def __init__(self, means=None, names=None):
-        if means is None:
-            means = []
-        if names is None:
-            names = []
-        self.means = dict(zip(means, names))
-    def classify(self, point):
-        return min(self.means.keys(), key=(lambda mean: abs(point - mean)))
-    @staticmethod
-    def from_file(file, limit=5):
-        colors = []
-        with open(file) as fd:
-            for line in fd:
-                line = line.strip()
-                if line[0] == '#':
-                    continue
-                name, hexstr = line.split('\t')
-                color = Color.from_hex(hexstr)
-                colors.append((color, name))
-        colors = list(reversed(colors))
-        return KNN(color for color, name in colors[:limit])
+from color import Color, closest_color
+from rdfwrap import NXRDF
 
 def step(color, max_dist=8):
     rand = randrange(3)
@@ -44,7 +21,9 @@ def step(color, max_dist=8):
             new_primary = color.b + randrange(-max_dist, max_dist + 1)
         return Color(color.r, color.g, new_primary)
 
-def walk(n, start=None):
+def random_walk(n, start=None, seed=None):
+    if seed is not None:
+        set_seed(seed)
     if start is None:
         cur_color = Color(randrange(256), randrange(256), randrange(256))
     else:
@@ -55,13 +34,30 @@ def walk(n, start=None):
         cur_color = step(cur_color)
     return result
 
+def random_colors(n, seed=None):
+    if seed is not None:
+        set_seed(seed)
+    result = []
+    for i in range(n):
+        result.append(Color(randrange(256), randrange(256), randrange(256)))
+    return result
 
+def color_episodes(colors, num_labels):
+    g = NXRDF()
+    for time, color in enumerate(colors):
+        node = g.add_node()
+        g.add_edge(node, 'episode', time)
+        g.add_edge(node, 'color_code', color)
+        g.add_edge(node, 'color_name', closest_color(color, num_labels).name)
+        g.add_edge(node, 'red', color.r)
+        g.add_edge(node, 'green', color.g)
+        g.add_edge(node, 'blue', color.b)
+        g.add_edge(node, 'type', 'color')
+    return g
 
 def main():
-    for time, color in enumerate(walk(10)):
+    for time, color in enumerate(random_walk(10, seed=8675309)):
         print(time, color)
-
-
 
 if __name__ == '__main__':
     main()
