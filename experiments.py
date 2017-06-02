@@ -1,6 +1,7 @@
 from collections import namedtuple
 from random import seed as set_seed
 from time import time
+from datetime import datetime
 
 from color import Color, create_knn, closest_color
 from chroma_wanderer import random_walk, random_colors, color_episodes
@@ -193,6 +194,8 @@ def main():
 
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
+
+            timestamp=(lambda: datetime.now().isoformat(sep=' ')),
     )
 
     # filter to parameter space so the # of neighbors doesn't exceed 1 for brute-force and exact-heuristic algorithms
