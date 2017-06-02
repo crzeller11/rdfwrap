@@ -7,7 +7,7 @@ from chroma_wanderer import random_walk, random_colors, color_episodes
 from permspace import PermutationSpace, Namespace
 from rdfwrap import NXRDF
 
-ExperimentResult = namedtuple('ExperimentResult', ['answer', 'total_episodes', 'num_fallbacks'])
+ExperimentResult = namedtuple('ExperimentResult', ['answer', 'total_episodes', 'num_fallbacks', 'runtime'])
 
 # finds the color closest to target color and minimum distance
 def min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results):
@@ -45,7 +45,7 @@ def run_brute_force(parameters, episode_graph):
     min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
     # return instance in ExperimentResult with min color and total episodes
-    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
+    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0, runtime=0)
 
 def run_exact_heuristic(parameters, episode_graph):
     # find semantic label of target color
@@ -71,7 +71,7 @@ def run_exact_heuristic(parameters, episode_graph):
     # loop through all colors with same label as target, find closest to target color, distance btwn them, and # episodes
     min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
-    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
+    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0, runtime=0)
 
 def run_neighbor_heuristic(parameters, episode_graph):
     # find semantic label of target color
@@ -117,7 +117,7 @@ def run_neighbor_heuristic(parameters, episode_graph):
         min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
     # return instance of ExperimentResult with the min color and total episodes
-    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
+    return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0, runtime=0)
 
 # function runs experiment according to parameters set within parameter space
 def run_experiment(parameters):
@@ -133,7 +133,7 @@ def run_experiment(parameters):
     # initializations
     total_episodes = 0
     num_fallbacks = 0
-    result = ExperimentResult(answer=None, total_episodes=total_episodes, num_fallbacks=num_fallbacks)
+    result = ExperimentResult(answer=None, total_episodes=total_episodes, num_fallbacks=num_fallbacks, runtime=0)
 
     start_time = time() # start clock
 
@@ -163,10 +163,11 @@ def run_experiment(parameters):
             answer=result.answer,
             total_episodes=total_episodes,
             num_fallbacks=num_fallbacks,
+            runtime=runtime,
     )
 
-    # print metrics
-    print(runtime, result.total_episodes, result.num_fallbacks, str(result.answer))
+    # return metrics
+    return result
 
 def main():
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
@@ -200,8 +201,7 @@ def main():
                 not (algorithm in ['brute-force', 'exact-heuristic'] and num_neighbors > 1)))
 
     for parameters in parameter_space:
-        print(parameters)
-        run_experiment(parameters)
+        print(run_experiment(parameters))
 
 if __name__ == '__main__':
     main()
