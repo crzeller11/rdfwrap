@@ -9,7 +9,20 @@ from rdfwrap import NXRDF
 
 ExperimentResult = namedtuple('ExperimentResult', ['answer', 'total_episodes', 'num_fallbacks'])
 
+# finds the color closest to target color and minimum distance
+def min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results):
+    for result in results:
+        episode_color = Color(result[2].value, result[3].value, result[4].value)
+        distance = parameters.target_color - episode_color
+        if distance < min_distance:
+            min_distance = distance # min distance is the RGB distance btwn min_color and target_color
+            min_color = episode_color # min color is the closest color to target color
+        total_episodes += 1
+    return min_color, total_episodes
+
+
 def run_brute_force(parameters, episode_graph):
+    # query isolates all colors in graph
     query = '''
     SELECT DISTINCT ?time ?name ?r ?g ?b
         WHERE {
@@ -24,22 +37,20 @@ def run_brute_force(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
-
     min_distance = 3 * 255
     min_color = None
-    for result in episode_graph.query(query):
-        episode_color = Color(result[2].value, result[3].value, result[4].value)
-        distance = parameters.target_color - episode_color
-        if distance < min_distance:
-            min_distance = distance
-            min_color = episode_color
-        total_episodes += 1
+    # FIXME: Do we need to restate these every time?
 
+    # for every color in graph, find closest color to target color, distance btwn two colors, and # episodes
+    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
+
+    # return instance in ExperimentResult with min color and total episodes
     return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
 
-def run_exact_label(parameters, episode_graph):
+def run_exact_heuristic(parameters, episode_graph):
+    # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
-
+    # isolate all colors in graph with same label as target color
     query = '''
     SELECT DISTINCT ?time ?name ?r ?g ?b
         WHERE {{
@@ -54,20 +65,16 @@ def run_exact_label(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
-
     min_distance = 3 * 255
     min_color = None
-    for result in episode_graph.query(query):
-        episode_color = Color(result[2].value, result[3].value, result[4].value)
-        distance = parameters.target_color - episode_color
-        if distance < min_distance:
-            min_distance = distance
-            min_color = episode_color
-        total_episodes += 1
+
+    # loop through all colors with same label as target, find closest to target color, distance btwn them, and # episodes
+    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
     return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
 
-def run_neighbor_labels(parameters, episode_graph):
+def run_neighbor_heuristic(parameters, episode_graph):
+    # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
 
     knn = create_knn(parameters.num_labels, parameters.num_neighbors)
@@ -82,13 +89,15 @@ def run_neighbor_labels(parameters, episode_graph):
         ORDER BY ASC(?time)
     '''.format(label_color.name)
 
+    # isolate all neighbor labels of target semantic label
     neighbors = knn.query(neighbor_query)
 
+    # metrics
     total_episodes = 0
-
     min_distance = 3 * 255
     min_color = None
 
+    # loop through each neighbor label
     for row in neighbors:
         neighbor_name = row[0].value
 
@@ -104,16 +113,13 @@ def run_neighbor_labels(parameters, episode_graph):
             ORDER BY ASC(?time)
         '''.format(neighbor_name)
 
-        for result in episode_graph.query(query):
-            episode_color = Color(result[2].value, result[3].value, result[4].value)
-            distance = parameters.target_color - episode_color
-            if distance < min_distance:
-                min_distance = distance
-                min_color = episode_color
-            total_episodes += 1
+        # loop through each color within neighbor label and find min color and total episodes
+        min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
+    # return instance of ExperimentResult with the min color and total episodes
     return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0)
 
+# function runs experiment according to parameters set within parameter space
 def run_experiment(parameters):
     set_seed(parameters.random_seed)
 
@@ -124,65 +130,75 @@ def run_experiment(parameters):
         color_list = random_walk(parameters.num_episodes)
     episode_graph = color_episodes(color_list, num_labels=parameters.num_labels)
 
+    # initializations
     total_episodes = 0
     num_fallbacks = 0
     result = ExperimentResult(answer=None, total_episodes=total_episodes, num_fallbacks=num_fallbacks)
 
-    start_time = time()
+    start_time = time() # start clock
 
+    # if current algorithm is exact or neighbor heuristic, run exact label algorithm first and add an episode to total
     if parameters.algorithm in ['exact-heuristic', 'neighbor-heuristic']:
-        result = run_exact_label(parameters, episode_graph)
+        result = run_exact_heuristic(parameters, episode_graph)
         total_episodes += result.total_episodes
 
+    # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
     if result.answer is None and parameters.algorithm == 'neighbor-heuristic':
-        result = run_neighbor_labels(parameters, episode_graph)
+        result = run_neighbor_heuristic(parameters, episode_graph)
         total_episodes += result.total_episodes
         num_fallbacks += 1
 
+    # if no answer, run brute force algorithm
     if result.answer is None:
         result = run_brute_force(parameters, episode_graph)
         total_episodes = result.total_episodes
         if parameters.algorithm != 'brute-force':
             num_fallbacks += 1
 
-    end_time = time()
-    runtime = end_time - start_time # seconds
+    end_time = time() # end clock
+    runtime = end_time - start_time # record total time in seconds
 
+    # record results
     result = ExperimentResult(
             answer=result.answer,
             total_episodes=total_episodes,
             num_fallbacks=num_fallbacks,
     )
 
+    # print metrics
     print(runtime, result.total_episodes, result.num_fallbacks, str(result.answer))
 
 def main():
+    # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color_hex', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
-            random_seed=8675309,
-
-            #num_episodes=[10 ** n for n in range(1, 4)],
             num_episodes=5,
+            # num_episodes=[10 ** n for n in range(1, 4)],
 
-            #num_labels=range(10, 101, 10),
             num_labels=10,
+            # num_labels=range(10, 101, 10),
 
             target_color_hex='#808080',
 
-            target_color=(lambda target_color_hex: Color.from_hex(target_color_hex)),
+            random_seed=8675309,
+
+            num_neighbors=range(1, 6),
+
+            num_trials=1,
+            # num_trials=range(10),
 
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
 
-            #color_sequence_type=['random', 'walk'],
+            target_color=(lambda target_color_hex: Color.from_hex(target_color_hex)),
+
             color_sequence_type='random',
-
-            #num_trials=range(10),
-            num_trials=1,
-
-            num_neighbors=range(1, 6),
+            # color_sequence_type=['random', 'walk'],
     )
+
+    # filter to parameter space so the # of neighbors doesn't exceed 1 for brute-force and exact-heuristic algorithms
     parameter_space.add_filter(
             (lambda algorithm, num_neighbors:
                 not (algorithm in ['brute-force', 'exact-heuristic'] and num_neighbors > 1)))
+
     for parameters in parameter_space:
         print(parameters)
         run_experiment(parameters)
