@@ -203,8 +203,11 @@ def main():
             (lambda algorithm, num_neighbors:
                 not (algorithm in ['brute-force', 'exact-heuristic'] and num_neighbors > 1)))
 
-    for parameters in parameter_space:
-        print(run_experiment(parameters))
+    with open('results-' + datetime.now().isoformat(), 'a') as fd:
+        for parameters in parameter_space:
+            results = run_experiment(parameters)
+            parameters.update(**results._asdict())
+            fd.write(str(parameters) + '\n')
 
 if __name__ == '__main__':
     main()
