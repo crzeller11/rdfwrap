@@ -181,7 +181,7 @@ def main():
 
             target_color_hex='#808080',
 
-            random_seed=8675309,
+            random_seed=8675309, # will work across a variability of different types of colors
 
             num_neighbors=range(1, 6),
 
