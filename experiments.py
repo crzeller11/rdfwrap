@@ -173,19 +173,19 @@ def run_experiment(parameters):
 def main():
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color_hex', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
-            num_episodes=5,
+            num_episodes=[1, 10, 100, 1000, 10000, 100000],
             # num_episodes=[10 ** n for n in range(1, 4)],
 
-            num_labels=10,
+            num_labels=[5, 20, 45, 70, 150],
             # num_labels=range(10, 101, 10),
 
-            target_color_hex='#808080',
+            target_color_hex=['#808080', '#FFD8F9', '#104E8B', '#8B0000', '#3383FF'],
 
-            random_seed=8675309, # will work across a variability of different types of colors
+            random_seed=[8675309, 5487810, 1332113, 8749701, 8718348], # will work across a variability of different types of colors
 
             num_neighbors=range(1, 6),
 
-            num_trials=1,
+            num_trials=20,
             # num_trials=range(10),
 
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
