@@ -1,11 +1,11 @@
-from random import seed as set_seed
+from random import seed as set_seed, randrange, random
 from time import time
-from datetime import datetime
 
 from rdflib.plugins.sparql import prepareQuery
 
 from chroma_wanderer import random_walk, random_colors, color_episodes
 from color import Color, create_knn, closest_color
+from experiment import Experiment
 from permspace import PermutationSpace, Namespace
 from rdfwrap import NXRDF
 
@@ -144,31 +144,38 @@ def run_experiment(parameters):
     )
 
 def main():
+    set_seed(8675309)
+    num_target_colors = 1
+    target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
+    num_random_seeds = 1
+    random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color_hex', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
-            num_episodes=[1, 10, 100, 1000, 10000, 100000],
-            # num_episodes=[10 ** n for n in range(1, 4)],
+    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
+            #num_episodes=[1000, 10000, 100000],
+            num_episodes=100,
 
-            num_labels=[5, 20, 45, 70, 150],
-            # num_labels=range(10, 101, 10),
+            #num_labels=[10, 20, 50, 100, 200],
+            num_labels=100,
 
-            target_color_hex=['#808080', '#FFD8F9', '#104E8B', '#8B0000', '#3383FF'],
-
-            random_seed=[8675309, 5487810, 1332113, 8749701, 8718348], # will work across a variability of different types of colors
+            # will work across a variability of different types of colors
+            #random_seed=[8675309, 5487810, 1332113, 8749701, 8718348],
+            random_seed=random_seeds,
 
             num_neighbors=range(1, 6),
 
-            num_trials=20,
-            # num_trials=range(10),
+            #num_trials=range(5),
+            num_trials=range(1),
 
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
 
-            target_color=(lambda target_color_hex: Color.from_hex(target_color_hex)),
+            target_color=target_colors,
+            #target_color=MetaParameter((lambda num_target_colors:
+            #    [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]))
+
+            target_color_hex=(lambda target_color: str(target_color)),
 
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
-
-            timestamp=(lambda: datetime.now().isoformat(sep=' ')),
     )
 
     # filter to parameter space so the # of neighbors doesn't exceed 1 for brute-force and exact-heuristic algorithms
@@ -176,11 +183,8 @@ def main():
         (lambda algorithm, num_neighbors:
             not (algorithm in ['brute-force', 'exact-heuristic'] and num_neighbors > 1)))
 
-    with open('results-' + datetime.now().isoformat(), 'a') as fd:
-        for parameters in parameter_space:
-            results = run_experiment(parameters)
-            parameters.update(**results)
-            fd.write(str(parameters) + '\n')
+    exp1 = Experiment('experiment-1', parameter_space, run_experiment)
+    exp1.run()
 
 if __name__ == '__main__':
     main()
