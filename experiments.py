@@ -3,12 +3,36 @@ from random import seed as set_seed
 from time import time
 from datetime import datetime
 
+from rdflib.plugins.sparql import prepareQuery
+
 from color import Color, create_knn, closest_color
 from chroma_wanderer import random_walk, random_colors, color_episodes
 from permspace import PermutationSpace, Namespace
 from rdfwrap import NXRDF
 
 ExperimentResult = namedtuple('ExperimentResult', ['answer', 'total_episodes', 'num_fallbacks', 'runtime'])
+
+EXACT_LABEL_QUERY = prepareQuery('''
+SELECT DISTINCT ?time ?name ?r ?g ?b
+    WHERE {
+        ?episode nxrdf:episode ?time ;
+                 nxrdf:color_name ?name ;
+                 nxrdf:red ?r ;
+                 nxrdf:green ?g ;
+                 nxrdf:blue ?b .
+    }
+    ORDER BY ASC(?time)
+''', initNs={'nxrdf':NXRDF.NAMESPACE})
+
+NEIGHBOR_LABELS_QUERY = prepareQuery('''
+SELECT DISTINCT ?neighbor_name
+    WHERE {
+        ?parent nxrdf:neighbor ?neighbor ;
+                nxrdf:color_name ?name .
+        ?neighbor nxrdf:color_name ?neighbor_name .
+    }
+    ORDER BY ASC(?time)
+''', initNs={'nxrdf':NXRDF.NAMESPACE})
 
 # finds the color closest to target color and minimum distance
 def min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results):
@@ -21,21 +45,8 @@ def min_color_total_episodes(total_episodes, min_distance, min_color, parameters
         total_episodes += 1
     return min_color, total_episodes
 
-
 def run_brute_force(parameters, episode_graph):
     # query isolates all colors in graph
-    query = '''
-    SELECT DISTINCT ?time ?name ?r ?g ?b
-        WHERE {
-            ?episode nxrdf:episode ?time ;
-                     nxrdf:color_name ?name ;
-                     nxrdf:red ?r ;
-                     nxrdf:green ?g ;
-                     nxrdf:blue ?b .
-        }
-        ORDER BY ASC(?time)
-    '''
-
     # metrics
     total_episodes = 0
     min_distance = 3 * 255
@@ -43,7 +54,8 @@ def run_brute_force(parameters, episode_graph):
     # FIXME: Do we need to restate these every time?
 
     # for every color in graph, find closest color to target color, distance btwn two colors, and # episodes
-    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
+    results = episode_graph.query(EXACT_LABEL_QUERY)
+    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
 
     # return instance in ExperimentResult with min color and total episodes
     return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0, runtime=0)
@@ -51,18 +63,6 @@ def run_brute_force(parameters, episode_graph):
 def run_exact_heuristic(parameters, episode_graph):
     # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
-    # isolate all colors in graph with same label as target color
-    query = '''
-    SELECT DISTINCT ?time ?name ?r ?g ?b
-        WHERE {{
-            ?episode nxrdf:episode ?time ;
-                     nxrdf:color_name "{}" ;
-                     nxrdf:red ?r ;
-                     nxrdf:green ?g ;
-                     nxrdf:blue ?b .
-        }}
-        ORDER BY ASC(?time)
-    '''.format(label_color.name)
 
     # metrics
     total_episodes = 0
@@ -70,7 +70,8 @@ def run_exact_heuristic(parameters, episode_graph):
     min_color = None
 
     # loop through all colors with same label as target, find closest to target color, distance btwn them, and # episodes
-    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
+    results = episode_graph.query(EXACT_LABEL_QUERY, initBindings={'name':label_color.name})
+    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
 
     return ExperimentResult(answer=min_color, total_episodes=total_episodes, num_fallbacks=0, runtime=0)
 
@@ -78,20 +79,9 @@ def run_neighbor_heuristic(parameters, episode_graph):
     # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
 
-    knn = create_knn(parameters.num_labels, parameters.num_neighbors)
-
-    neighbor_query = '''
-    SELECT DISTINCT ?neighbor_name
-        WHERE {{
-            ?parent nxrdf:neighbor ?neighbor ;
-                    nxrdf:color_name "{}" .
-            ?neighbor nxrdf:color_name ?neighbor_name .
-        }}
-        ORDER BY ASC(?time)
-    '''.format(label_color.name)
-
     # isolate all neighbor labels of target semantic label
-    neighbors = knn.query(neighbor_query)
+    knn = create_knn(parameters.num_labels, parameters.num_neighbors)
+    neighbors = knn.query(NEIGHBOR_LABELS_QUERY, initBindings={'name':label_color.name})
 
     # metrics
     total_episodes = 0
@@ -102,19 +92,8 @@ def run_neighbor_heuristic(parameters, episode_graph):
     for row in neighbors:
         neighbor_name = row[0].value
 
-        query = '''
-        SELECT DISTINCT ?time ?name ?r ?g ?b
-            WHERE {{
-                ?episode nxrdf:episode ?time ;
-                         nxrdf:color_name "{}" ;
-                         nxrdf:red ?r ;
-                         nxrdf:green ?g ;
-                         nxrdf:blue ?b .
-            }}
-            ORDER BY ASC(?time)
-        '''.format(neighbor_name)
-
         # loop through each color within neighbor label and find min color and total episodes
+        results = episode_graph.query(EXACT_LABEL_QUERY, initBindings={'name':neighbor_name})
         min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, episode_graph.query(query))
 
     # return instance of ExperimentResult with the min color and total episodes
