@@ -42,18 +42,34 @@ def random_colors(n, seed=None):
         result.append(Color(randrange(256), randrange(256), randrange(256)))
     return result
 
-def color_episodes(colors, num_labels):
-    g = NXRDF()
-    for time, color in enumerate(colors):
-        node = g.add_node()
-        g.add_edge(node, 'episode', time)
-        g.add_edge(node, 'color_code', color)
-        g.add_edge(node, 'color_name', closest_color(color, num_labels).name)
-        g.add_edge(node, 'red', color.r)
-        g.add_edge(node, 'green', color.g)
-        g.add_edge(node, 'blue', color.b)
-        g.add_edge(node, 'type', 'color')
-    return g
+def color_episodes(colors, num_labels, graph=None, start_time=0):
+    if graph is None:
+        graph = NXRDF()
+    for time, color in enumerate(colors, start=start_time):
+        node = graph.add_node()
+        graph.add_edge(node, 'episode', time)
+        graph.add_edge(node, 'color_code', color)
+        graph.add_edge(node, 'color_name', closest_color(color, num_labels).name)
+        graph.add_edge(node, 'red', color.r)
+        graph.add_edge(node, 'green', color.g)
+        graph.add_edge(node, 'blue', color.b)
+        graph.add_edge(node, 'type', 'color')
+    return graph
+
+def color_episodes_with_changes(colors, changes):
+    # changes is a list of [time, num_label] pairs; for example
+    # changes = [
+    #     [0, 10],  # start with 10 labels
+    #     [17, 11], # at time 17, use 11 labels
+    #     [60, 12], # at time 60, use 12 labels
+    # ]
+    graph = NXRDF()
+    if changes[-1][0] < len(colors):
+        changes = changes + [[len(colors), changes[-1][1]]]
+    print(changes)
+    for [start, num_labels], [end, _] in zip(changes[:-1], changes[1:]):
+        graph = color_episodes(colors[start:end], num_labels, graph, start_time=start)
+    return graph
 
 def main():
     for time, color in enumerate(random_walk(10, seed=8675309)):
