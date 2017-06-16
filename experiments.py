@@ -97,7 +97,7 @@ def run_neighbor_heuristic(parameters, episode_graph):
     return min_color, total_episodes
 
 # function runs experiment according to parameters set within parameter space
-def run_experiment(parameters):
+def run_static_experiment(parameters):
     set_seed(parameters.random_seed)
 
     # create episodes of color
@@ -143,41 +143,22 @@ def run_experiment(parameters):
         runtime=runtime,
     )
 
-def create_experiment_1():
+def create_static_experiment_pilot():
     set_seed(8675309)
-    num_target_colors = 100
+    num_target_colors = 5
+    num_random_seeds = 5
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
-    num_random_seeds = 100
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
+    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'algorithm'],
             num_episodes=[1000, 10000, 100000],
-
             num_labels=[10, 20, 50, 100, 200],
-
-            # will work across a variability of different types of colors
-            random_seed=random_seeds,
-
-            num_neighbors=1,
-
-            num_trials=range(6),
-
+            random_seed_index=range(num_random_seeds),
+            random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
+            num_neighbors=0,
             algorithm=['brute-force', 'exact-heuristic'],
-
             target_color=target_colors,
-            #target_color=MetaParameter((lambda num_target_colors:
-            #    [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]))
-
             target_color_hex=(lambda target_color: str(target_color)),
-
             color_sequence_type='random',
-            # color_sequence_type=['random', 'walk'],
     )
-    return Experiment('experiment-1', parameter_space, run_experiment)
-
-def main():
-    exp = create_experiment_1()
-    exp.run()
-
-if __name__ == '__main__':
-    main()
+    return Experiment('static-experiment-pilot', parameter_space, run_static_experiment)
