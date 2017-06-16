@@ -143,30 +143,26 @@ def run_experiment(parameters):
         runtime=runtime,
     )
 
-def main():
+def create_experiment_1():
     set_seed(8675309)
-    num_target_colors = 1
+    num_target_colors = 100
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
-    num_random_seeds = 1
+    num_random_seeds = 100
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
-            #num_episodes=[1000, 10000, 100000],
-            num_episodes=100,
+            num_episodes=[1000, 10000, 100000],
 
-            #num_labels=[10, 20, 50, 100, 200],
-            num_labels=100,
+            num_labels=[10, 20, 50, 100, 200],
 
             # will work across a variability of different types of colors
-            #random_seed=[8675309, 5487810, 1332113, 8749701, 8718348],
             random_seed=random_seeds,
 
-            num_neighbors=range(1, 6),
+            num_neighbors=1,
 
-            #num_trials=range(5),
-            num_trials=range(1),
+            num_trials=range(6),
 
-            algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
+            algorithm=['brute-force', 'exact-heuristic'],
 
             target_color=target_colors,
             #target_color=MetaParameter((lambda num_target_colors:
@@ -177,14 +173,11 @@ def main():
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
     )
+    return Experiment('experiment-1', parameter_space, run_experiment)
 
-    # filter to parameter space so the # of neighbors doesn't exceed 1 for brute-force and exact-heuristic algorithms
-    parameter_space.add_filter(
-        (lambda algorithm, num_neighbors:
-            not (algorithm in ['brute-force', 'exact-heuristic'] and num_neighbors > 1)))
-
-    exp1 = Experiment('experiment-1', parameter_space, run_experiment)
-    exp1.run()
+def main():
+    exp = create_experiment_1()
+    exp.run()
 
 if __name__ == '__main__':
     main()
