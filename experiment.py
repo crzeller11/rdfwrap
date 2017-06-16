@@ -25,24 +25,27 @@ class Experiment:
         print_headers = True
         start_time = datetime.now().isoformat()
         output_file = '{}-{}-results.csv'.format(self.name, start_time)
-        with open(output_file, 'a') as fd:
-            iterator = self.parameter_space
-            if iterator_modifier is not None:
-                iterator = iterator_modifier(iterator)
-            for parameters in iterator:
-                run_info = Namespace(
-                    _start_time=datetime.now().isoformat(sep=' '),
-                )
-                results = self.function(parameters)
-                run_info.update(_end_time=datetime.now().isoformat(sep=' '))
-                if print_headers:
+        with open(output_file, 'w') as fd:
+            fd.write('')
+        iterator = self.parameter_space
+        if iterator_modifier is not None:
+            iterator = iterator_modifier(iterator)
+        for parameters in iterator:
+            run_info = Namespace(
+                _start_time=datetime.now().isoformat(sep=' '),
+            )
+            results = self.function(parameters)
+            run_info.update(_end_time=datetime.now().isoformat(sep=' '))
+            if print_headers:
+                with open(output_file, 'a') as fd:
                     fd.write('\t'.join(self.order + sorted(results.keys())) + '\n')
-                    print_headers = False
-                csv_row = Namespace()
-                csv_row.update(**parameters)
-                csv_row.update(**results)
-                csv_row.update(**self.machine_info)
-                csv_row.update(**run_info)
+                print_headers = False
+            csv_row = Namespace()
+            csv_row.update(**parameters)
+            csv_row.update(**results)
+            csv_row.update(**self.machine_info)
+            csv_row.update(**run_info)
+            with open(output_file, 'a') as fd:
                 fd.write(csv_row.to_csv_row(self.order) + '\n')
     def run(self):
         self._run()
