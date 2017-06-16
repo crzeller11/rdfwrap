@@ -45,15 +45,27 @@ class Namespace:
         return '\t'.join(str(self[k]) for k in order)
 
 class ParameterSpaceIterator:
-    def __init__(self, pspace, **starting_values):
+    def __init__(self, pspace, start=None, end=None):
+        if start is None:
+            start = {}
+        if end is None:
+            end = {}
         self.pspace = pspace
         self._state = len(self.pspace.order) * [0]
-        for key, value in starting_values.items():
-            assert key in self.pspace.independents, 'unknown parameter: {}'.format(key)
-            assert value in self.pspace.independents[key], 'unknown value for parameter {}: {}'.format(key, repr(value))
+        for key, value in start.items():
+            assert key in self.pspace.independents, 'unknown start parameter: {}'.format(key)
+            assert value in self.pspace.independents[key], 'unknown value for start parameter {}: {}'.format(key, repr(value))
             index = self.pspace.order.index(key)
             self._state[index] = self.pspace.independents[key].index(value)
         self._state[-1] -= 1
+        self._end_state = None
+        if end:
+            self._end_state = len(self.pspace.order) * [0]
+            for key, value in end.items():
+                assert key in self.pspace.independents, 'unknown end parameter: {}'.format(key)
+                assert value in self.pspace.independents[key], 'unknown value for end parameter {}: {}'.format(key, repr(value))
+                index = self.pspace.order.index(key)
+                self._end_state[index] = self.pspace.independents[key].index(value)
     def __iter__(self):
         return self
     def __next__(self):
@@ -75,6 +87,8 @@ class ParameterSpaceIterator:
         for index, parameter in reversed(tuple(enumerate(parameters))):
             if self._state[index] < len(self.pspace.independents[parameter]) - 1:
                 self._state[index] += 1
+                if self._end_state and self._state >= self._end_state:
+                    raise StopIteration
                 break
             elif index == 0:
                 raise StopIteration
@@ -177,8 +191,12 @@ class PermutationSpace:
         return len(list(self.__iter__()))
     def __iter__(self):
         return ParameterSpaceIterator(self)
-    def iter_from(self, **starting_values):
-        return ParameterSpaceIterator(self, **starting_values)
+    def iter_from(self, start=None):
+        return ParameterSpaceIterator(self, start=start)
+    def iter_until(self, end=None):
+        return ParameterSpaceIterator(self, end=end)
+    def iter_between(self, start=None, end=None):
+        return ParameterSpaceIterator(self, start=start, end=end)
     def add_filter(self, fn):
         wrapped_function = FunctionWrapper(fn)
         if not (set(wrapped_function.arguments) <= self.parameters):
