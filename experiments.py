@@ -61,6 +61,8 @@ def run_exact_heuristic(parameters, episode_graph):
     # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
 
+
+
     # metrics
     total_episodes = 0
     min_distance = 3 * 255
