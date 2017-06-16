@@ -138,9 +138,9 @@ class PermutationSpace:
                 self.dependents[key] = FunctionWrapper(value)
             else:
                 self.constants[key] = value
+        self._check_order_()
         self._calculate_dependents_topo_()
         self._calculate_dependency_closure_()
-        self._check_order_()
         self._simplify_order_()
     def _calculate_dependents_topo_(self):
         prev_count = 0
@@ -172,12 +172,16 @@ class PermutationSpace:
                     duplicates.add(key)
                 uniques.add(key)
             raise ValueError('parameter ordering contains duplicates: ' + ', '.join(sorted(duplicates)))
-        if not (order_set <= self.parameters):
-            unreachables = order_set - self.parameters
-            raise ValueError('parameter ordering contains undefined parameters: ' + ', '.join(sorted(unreachables)))
-        if not (set(self.independents.keys()) <= order_set):
-            unreachables = set(self.independents.keys()) - order_set
-            raise ValueError('parameter ordering is missing independent parameters: ' + ', '.join(sorted(unreachables)))
+        if order_set != set(self.independents.keys()):
+            if not order_set <= self.parameters:
+                unreachables = order_set - self.parameters
+                raise ValueError('parameter ordering contains undefined parameters: ' + ', '.join(sorted(unreachables)))
+            if not set(self.independents.keys()) <= order_set:
+                unreachables = set(self.independents.keys()) - order_set
+                raise ValueError('parameter ordering is missing independent parameters: ' + ', '.join(sorted(unreachables)))
+            if not order_set <= set(self.independents.keys()):
+                unreachables = order_set - set(self.independents.keys())
+                raise ValueError('parameter ordering contains non-independent parameters: ' + ', '.join(sorted(unreachables)))
     def _simplify_order_(self):
         self.order = [parameter for parameter in self.order if parameter in self.independents]
     @property
@@ -187,6 +191,12 @@ class PermutationSpace:
             set(self.dependents_topo),
             set(self.constants.keys()),
         )
+    @property
+    def approximate_size(self):
+        product = 1
+        for values in self.independents.values():
+            product *= len(values)
+        return product
     def __len__(self):
         return len(list(self.__iter__()))
     def __iter__(self):
@@ -199,6 +209,6 @@ class PermutationSpace:
         return ParameterSpaceIterator(self, start=start, end=end)
     def add_filter(self, fn):
         wrapped_function = FunctionWrapper(fn)
-        if not (set(wrapped_function.arguments) <= self.parameters):
+        if not set(wrapped_function.arguments) <= self.parameters:
             raise ValueError('filter contains undefined/unreachable arguments')
         self.filters.append(wrapped_function)
