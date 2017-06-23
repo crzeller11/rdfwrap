@@ -1,9 +1,9 @@
-from random import seed as set_seed, randrange, random
+from random import seed as set_seed, randrange, random, randint
 from time import time
 
 from rdflib.plugins.sparql import prepareQuery
 
-from chroma_wanderer import random_walk, random_colors, color_episodes
+from chroma_wanderer import random_walk, random_colors, color_episodes, color_episodes_with_changes
 from color import Color, create_knn, closest_color
 from experiment import Experiment
 from permspace import PermutationSpace, Namespace
@@ -48,7 +48,6 @@ def run_brute_force(parameters, episode_graph):
     total_episodes = 0
     min_distance = 3 * 255
     min_color = None
-    # FIXME: Do we need to restate these every time?
 
     # for every color in graph, find closest color to target color, distance btwn two colors, and # episodes
     results = episode_graph.query(EXACT_LABEL_QUERY)
@@ -98,6 +97,39 @@ def run_neighbor_heuristic(parameters, episode_graph):
     # return min color and total episodes
     return min_color, total_episodes
 
+# generates a randomized nested list of time, num_label pairs
+def generate_changes(num_episodes, num_labels): # add number of changes?
+    time = 0
+    num_label = 0
+    changes = []
+    while time <= num_episodes:
+        if num_episodes == 1000:
+            add_time = randint(0, 50)
+        elif num_episodes == 10000:
+            add_time = randint(0, 500)
+
+        if num_labels == 10:
+            add_label = randint(1, 5)
+        elif num_labels == 20:
+            add_label = (1, 10)
+        elif num_labels == 50:
+            add_label = (1, 25)
+        elif num_labels == 100:
+            add_label = (1, 50)
+
+        if add_label != 0 and add_time == 0:
+            add_time = randint(1, 10)
+        if num_label != num_labels:
+            num_label += add_label
+
+        time += add_time
+        changes.append([time, num_label])
+
+    return changes
+
+
+
+# making the graph is now different
 # function runs experiment according to parameters set within parameter space
 def run_experiment(parameters):
     set_seed(parameters.random_seed)
@@ -107,7 +139,8 @@ def run_experiment(parameters):
         color_list = random_colors(parameters.num_episodes)
     elif parameters.color_sequence_type == 'walk':
         color_list = random_walk(parameters.num_episodes)
-    episode_graph = color_episodes(color_list, num_labels=parameters.num_labels)
+    changes = generate_changes(parameters.num_episodes, parameters.num_labels)
+    episode_graph = color_episodes_with_changes(color_list, changes)
 
     # initializations
     answer = None
@@ -147,15 +180,15 @@ def run_experiment(parameters):
 
 def create_experiment_1():
     set_seed(8675309)
-    num_target_colors = 100
+    num_target_colors = 10
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
-    num_random_seeds = 100
+    num_random_seeds = 10
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
-            num_episodes=[1000, 10000, 100000],
+            num_episodes=[1000, 10000],
 
-            num_labels=[10, 20, 50, 100, 200],
+            num_labels=[10, 20, 50, 100],
 
             # will work across a variability of different types of colors
             random_seed=random_seeds,
@@ -178,8 +211,18 @@ def create_experiment_1():
     return Experiment('experiment-1', parameter_space, run_experiment)
 
 def main():
-    exp = create_experiment_1()
-    exp.run()
+    #exp = create_experiment_1()
+    #exp.run()
+    episodes = [1000, 10000]
+    labels = [10, 20, 50, 100]
+    perms = []
+    for episode in episodes:
+        for label in labels:
+            perms.append([episode, label])
+    print(perms)
+    for item in perms:
+        print(generate_changes(item[0], item[1]))
+
 
 if __name__ == '__main__':
     main()
