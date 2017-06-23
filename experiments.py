@@ -192,20 +192,9 @@ def create_static_experiment():
 
 # generates a randomized nested list of time, num_label pairs
 def generate_changes(num_episodes, num_labels): # add number of changes?
-    time = 0
-    num_label = 0
-    changes = []
-    while time <= num_episodes:
-        add_time = randint(1, num_episodes/20)
-        add_label = randint(1, num_labels/2)
-
-        if num_label != num_labels:
-            num_label += add_label
-
-        time += add_time
-        changes.append([time, num_label])
-
-    return changes
+    init_labels = ceil(num_labels / 10)
+    episodes_per = num_episodes / (num_labels - init_labels + 1)
+    return [[floor(i * episodes_per), init_labels + i] for i in range(num_labels - init_labels + 1)]
 
 # making the graph is now different
 def run_experiment(parameters):
