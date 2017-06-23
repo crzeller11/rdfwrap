@@ -205,8 +205,8 @@ def run_experiment(parameters):
         color_list = random_colors(parameters.num_episodes)
     elif parameters.color_sequence_type == 'walk':
         color_list = random_walk(parameters.num_episodes)
-    changes = generate_changes(parameters.num_episodes, parameters.num_labels)
-    episode_graph = color_episodes_with_changes(color_list, changes)
+
+    episode_graph = color_episodes_with_changes(color_list, parameters.changes)
 
     # initializations
     answer = None
@@ -271,23 +271,17 @@ def create_experiment_1():
 
             target_color_hex=(lambda target_color: str(target_color)),
 
+            changes=(lambda num_episodes, num_labels: generate_changes(num_episodes, num_labels)),
+
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
     )
     return Experiment('experiment-1', parameter_space, run_experiment)
 
 def main():
-    #exp = create_experiment_1()
-    #exp.run()
-    episodes = [1000, 10000]
-    labels = [10, 20, 50, 100]
-    perms = []
-    for episode in episodes:
-        for label in labels:
-            perms.append([episode, label])
-    print(perms)
-    for item in perms:
-        print(generate_changes(item[0], item[1]))
+    exp = create_experiment_1()
+    exp.run()
+
 
 
 if __name__ == '__main__':
