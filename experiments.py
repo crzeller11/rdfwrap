@@ -111,11 +111,11 @@ def generate_changes(num_episodes, num_labels): # add number of changes?
         if num_labels == 10:
             add_label = randint(1, 5)
         elif num_labels == 20:
-            add_label = (1, 10)
+            add_label = randint(1, 10)
         elif num_labels == 50:
-            add_label = (1, 25)
+            add_label = randint(1, 25)
         elif num_labels == 100:
-            add_label = (1, 50)
+            add_label = randint(1, 50)
 
         if add_label != 0 and add_time == 0:
             add_time = randint(1, 10)
