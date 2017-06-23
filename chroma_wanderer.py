@@ -66,14 +66,17 @@ def color_episodes_with_changes(colors, changes):
     graph = NXRDF()
     if changes[-1][0] < len(colors):
         changes = changes + [[len(colors), changes[-1][1]]]
-    print(changes)
     for [start, num_labels], [end, _] in zip(changes[:-1], changes[1:]):
         graph = color_episodes(colors[start:end], num_labels, graph, start_time=start)
     return graph
 
 def main():
-    for time, color in enumerate(random_walk(10, seed=8675309)):
-        print(time, color)
+    changes = [
+        [0, 1],
+        [3, 2],
+    ]
+    colors = [Color.from_hex('#3761C6') for i in range(6)]
+    print(color_episodes_with_changes(colors, changes).to_dot())
 
 if __name__ == '__main__':
     main()
