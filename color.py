@@ -17,7 +17,10 @@ class Color:
     def __str__(self):
         return '#{:02x}{:02x}{:02x}'.format(self.r, self.g, self.b).upper()
     def __repr__(self):
-        return str(self)
+        if self.name is not None:
+            return 'Color({}, {}, {}, name={})'.format(self.r, self.g, self.b, repr(self.name))
+        else:
+            return 'Color({}, {}, {})'.format(self.r, self.g, self.b)
     def __eq__(self, other):
         return str(self) == str(other)
     def __sub__(self, other):
@@ -36,6 +39,7 @@ def read_colors():
             if line[0] == '#':
                 continue
             count, name, hexcode = line.split('\t')
+            assert name, 'Colors must have a name, but only got hex: {}'.format(hexcode)
             colors.append(Color.from_hex(hexcode, name))
     return colors
 

@@ -26,8 +26,8 @@ class NXRDF:
         node = Literal(value)
         self.nx.add_node(node, **kwargs)
         return node
-    def query(self, sqarql):
-        return self.rdf.query(sqarql)
+    def query(self, sqarql, **kwargs):
+        return self.rdf.query(sqarql, **kwargs)
     def to_dot(self):
         return to_agraph(self.nx)
     def write_png(self, filename):
