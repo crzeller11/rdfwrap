@@ -97,6 +97,99 @@ def run_neighbor_heuristic(parameters, episode_graph):
     # return min color and total episodes
     return min_color, total_episodes
 
+
+
+# making the graph is now different
+# function runs experiment according to parameters set within parameter space
+def run_static_experiment(parameters):
+    set_seed(parameters.random_seed)
+
+    # create episodes of color
+    if parameters.color_sequence_type == 'random':
+        color_list = random_colors(parameters.num_episodes)
+    elif parameters.color_sequence_type == 'walk':
+        color_list = random_walk(parameters.num_episodes)
+    changes = generate_changes(parameters.num_episodes, parameters.num_labels)
+    episode_graph = color_episodes_with_changes(color_list, changes)
+
+    # initializations
+    answer = None
+    total_episodes = 0
+    num_fallbacks = 0
+
+    start_time = time() # start clock
+
+    # if current algorithm is exact or neighbor heuristic, run exact label algorithm first and add an episode to total
+    if parameters.algorithm in ['exact-heuristic', 'neighbor-heuristic']:
+        answer, section_episodes = run_exact_heuristic(parameters, episode_graph)
+        total_episodes += section_episodes
+
+    # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
+    if answer is None and parameters.algorithm == 'neighbor-heuristic':
+        answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
+        total_episodes += section_episodes
+        num_fallbacks += 1
+
+    # if no answer, run brute force algorithm
+    if answer is None:
+        answer, section_episodes = run_brute_force(parameters, episode_graph)
+        total_episodes += section_episodes
+        if parameters.algorithm != 'brute-force':
+            num_fallbacks += 1
+
+    end_time = time() # end clock
+    runtime = end_time - start_time # record total time in seconds
+
+    # return results
+    return Namespace(
+        answer=answer,
+        total_episodes=total_episodes,
+        num_fallbacks=num_fallbacks,
+        runtime=runtime,
+    )
+
+def create_static_experiment_pilot():
+    set_seed(8675309)
+    num_target_colors = 5
+    num_random_seeds = 5
+    target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
+    random_seeds = [random() for i in range(num_random_seeds)]
+    # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
+    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'algorithm'],
+            num_episodes=[1000, 10000, 100000],
+            num_labels=[10, 20, 50, 100, 200],
+            random_seed_index=range(num_random_seeds),
+            random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
+            num_neighbors=0,
+            algorithm=['brute-force', 'exact-heuristic'],
+            target_color=target_colors,
+            target_color_hex=(lambda target_color: str(target_color)),
+            color_sequence_type='random',
+    )
+    return Experiment('static-experiment-pilot', parameter_space, run_static_experiment)
+
+def create_static_experiment():
+    set_seed(8675309)
+    num_target_colors = 100
+    num_random_seeds = 100
+    target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
+
+    random_seeds = [random() for i in range(num_random_seeds)]
+    # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
+    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'num_trials', 'algorithm'],
+            num_episodes=[1000, 10000, 100000],
+            num_labels=[10, 20, 50, 100, 200],
+            random_seed_index=range(num_random_seeds),
+            random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
+            num_trials=range(6),
+            algorithm=['brute-force', 'exact-heuristic'],
+            target_color=target_colors,
+            target_color_hex=(lambda target_color: str(target_color)),
+            color_sequence_type='random',
+    )
+    return Experiment('static-experiment', parameter_space, run_static_experiment)
+
+
 # generates a randomized nested list of time, num_label pairs
 def generate_changes(num_episodes, num_labels): # add number of changes?
     time = 0
@@ -127,10 +220,7 @@ def generate_changes(num_episodes, num_labels): # add number of changes?
 
     return changes
 
-
-
 # making the graph is now different
-# function runs experiment according to parameters set within parameter space
 def run_experiment(parameters):
     set_seed(parameters.random_seed)
 

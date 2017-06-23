@@ -39,6 +39,7 @@ def read_colors():
             if line[0] == '#':
                 continue
             count, name, hexcode = line.split('\t')
+            assert name, 'Colors must have a name, but only got hex: {}'.format(hexcode)
             colors.append(Color.from_hex(hexcode, name))
     return colors
 
