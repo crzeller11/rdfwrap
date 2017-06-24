@@ -1,3 +1,4 @@
+from math import ceil, floor
 from random import seed as set_seed, randrange, random, randint
 from time import time
 
@@ -109,8 +110,7 @@ def run_static_experiment(parameters):
         color_list = random_colors(parameters.num_episodes)
     elif parameters.color_sequence_type == 'walk':
         color_list = random_walk(parameters.num_episodes)
-    changes = generate_changes(parameters.num_episodes, parameters.num_labels)
-    episode_graph = color_episodes_with_changes(color_list, changes)
+    episode_graph = color_episodes(color_list, parameters.num_labels)
 
     # initializations
     answer = None
