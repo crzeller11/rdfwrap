@@ -27,6 +27,12 @@ class NXRDF:
         self.nx.add_node(node, **kwargs)
         return node
     def query(self, sqarql, **kwargs):
+        if 'initBindings' in kwargs:
+            keys = list(kwargs['initBindings'].keys())
+            for key in keys:
+                value = kwargs['initBindings'][key]
+                if isinstance(value, (int, float, str)):
+                    kwargs['initBindings'][key] = Literal(value)
         return self.rdf.query(sqarql, **kwargs)
     def to_dot(self):
         return to_agraph(self.nx)
