@@ -7,7 +7,7 @@ def main(random_seed_index):
     exp = create_static_experiment_pilot()
 
     # uncomment to simply print parameters
-    exp.function = (lambda parameters: parameters)
+    #exp.function = (lambda parameters: parameters)
 
     if random_seed_index < 4:
         exp.run_between(
