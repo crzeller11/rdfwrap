@@ -166,7 +166,7 @@ def create_static_experiment_pilot():
             target_color_hex=(lambda target_color: str(target_color)),
             color_sequence_type='random',
     )
-    return Experiment('static-experiment-pilot', parameter_space, run_static_experiment)
+    return Experiment('static-pilot', parameter_space, run_static_experiment)
 
 def create_static_experiment():
     set_seed(8675309)
@@ -187,7 +187,7 @@ def create_static_experiment():
             target_color_hex=(lambda target_color: str(target_color)),
             color_sequence_type='random',
     )
-    return Experiment('static-experiment', parameter_space, run_static_experiment)
+    return Experiment('static', parameter_space, run_static_experiment)
 
 
 # generates a randomized nested list of time, num_label pairs
