@@ -1,5 +1,8 @@
 .INTERMEDIATE: color-survey.sqlite mainsurvey_sqldump.txt colorsurvey.tar.gz
 
+static-pilot-latest.csv: static-pilot-*-collated.csv
+	cp $(shell ls $^ | tail -n 1) $@
+
 color-centroids.tsv: create_tsv.py color-survey.sqlite
 	python3 create_tsv.py
 
