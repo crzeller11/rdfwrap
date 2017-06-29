@@ -82,3 +82,9 @@ def create_knn(num_colors, k, graph=None):
 
 def closest_color(color, num_colors):
     return min(COLOR_CACHE[:num_colors], key=(lambda neighbor: neighbor - color))
+
+def find_label_index(label):
+    matching = [index for index, color in enumerate(COLOR_CACHE) if color.name.lower() == label.lower()]
+    if matching:
+        return matching[0]
+    return None

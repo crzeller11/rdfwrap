@@ -5,7 +5,7 @@ from time import time
 from rdflib.plugins.sparql import prepareQuery
 
 from chroma_wanderer import random_walk, random_colors, color_episodes, color_episodes_with_changes
-from color import Color, create_knn, closest_color
+from color import Color, create_knn, closest_color, find_label_index
 from experiment import Experiment
 from permspace import PermutationSpace, Namespace
 from rdfwrap import NXRDF
@@ -40,39 +40,40 @@ def min_color_total_episodes(total_episodes, min_distance, min_color, parameters
         if distance < min_distance:
             min_distance = distance # min distance is the RGB distance btwn min_color and target_color
             min_color = episode_color # min color is the closest color to target color
+            min_time = result[0]
         total_episodes += 1
-    return min_color, total_episodes
+    return min_time, min_color, total_episodes
 
 def run_brute_force(parameters, episode_graph):
     # query isolates all colors in graph
     # metrics
     total_episodes = 0
+    min_time = 0
     min_distance = 3 * 255
     min_color = None
 
     # for every color in graph, find closest color to target color, distance btwn two colors, and # episodes
     results = episode_graph.query(EXACT_LABEL_QUERY)
-    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
+    min_time, min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
 
     # return min color and total episodes
-    return min_color, total_episodes
+    return min_time, min_color, total_episodes
 
 def run_exact_heuristic(parameters, episode_graph):
     # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
 
-
-
     # metrics
     total_episodes = 0
+    min_time = 0
     min_distance = 3 * 255
     min_color = None
 
     # loop through all colors with same label as target, find closest to target color, distance btwn them, and # episodes
     results = episode_graph.query(EXACT_LABEL_QUERY, initBindings={'name':label_color.name})
-    min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
+    min_time, min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
 
-    return min_color, total_episodes
+    return min_time, min_color, total_episodes
 
 def run_neighbor_heuristic(parameters, episode_graph):
     # find semantic label of target color
@@ -84,6 +85,7 @@ def run_neighbor_heuristic(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
+    min_time = 0
     min_distance = 3 * 255
     min_color = None
 
@@ -93,11 +95,10 @@ def run_neighbor_heuristic(parameters, episode_graph):
 
         # loop through each color within neighbor label and find min color and total episodes
         results = episode_graph.query(EXACT_LABEL_QUERY, initBindings={'name':neighbor_name})
-        min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
+        min_time, min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
 
     # return min color and total episodes
-    return min_color, total_episodes
-
+    return min_time, min_color, total_episodes
 
 
 # making the graph is now different
@@ -121,18 +122,18 @@ def run_static_experiment(parameters):
 
     # if current algorithm is exact or neighbor heuristic, run exact label algorithm first and add an episode to total
     if parameters.algorithm in ['exact-heuristic', 'neighbor-heuristic']:
-        answer, section_episodes = run_exact_heuristic(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_exact_heuristic(parameters, episode_graph)
         total_episodes += section_episodes
 
     # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
     if answer is None and parameters.algorithm == 'neighbor-heuristic':
-        answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
         total_episodes += section_episodes
         num_fallbacks += 1
 
     # if no answer, run brute force algorithm
     if answer is None:
-        answer, section_episodes = run_brute_force(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_brute_force(parameters, episode_graph)
         total_episodes += section_episodes
         if parameters.algorithm != 'brute-force':
             num_fallbacks += 1
@@ -143,6 +144,7 @@ def run_static_experiment(parameters):
     # return results
     return Namespace(
         answer=answer,
+        answer_episode=answer_episode,
         total_episodes=total_episodes,
         num_fallbacks=num_fallbacks,
         runtime=runtime,
@@ -197,7 +199,7 @@ def generate_changes(num_episodes, num_labels): # add number of changes?
     return [[floor(i * episodes_per), init_labels + i] for i in range(num_labels - init_labels + 1)]
 
 # making the graph is now different
-def run_experiment(parameters):
+def run_dynamic_experiment(parameters):
     set_seed(parameters.random_seed)
 
     # create episodes of color
@@ -217,18 +219,18 @@ def run_experiment(parameters):
 
     # if current algorithm is exact or neighbor heuristic, run exact label algorithm first and add an episode to total
     if parameters.algorithm in ['exact-heuristic', 'neighbor-heuristic']:
-        answer, section_episodes = run_exact_heuristic(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_exact_heuristic(parameters, episode_graph)
         total_episodes += section_episodes
 
     # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
     if answer is None and parameters.algorithm == 'neighbor-heuristic':
-        answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
         total_episodes += section_episodes
         num_fallbacks += 1
 
     # if no answer, run brute force algorithm
     if answer is None:
-        answer, section_episodes = run_brute_force(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_brute_force(parameters, episode_graph)
         total_episodes += section_episodes
         if parameters.algorithm != 'brute-force':
             num_fallbacks += 1
@@ -236,15 +238,28 @@ def run_experiment(parameters):
     end_time = time() # end clock
     runtime = end_time - start_time # record total time in seconds
 
+    # find episode where target color label was introduced
+    target_label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
+    target_label_index = find_label_index(target_label_color.name)
+    target_label_episode = -1
+    for num_episodes, num_labels in parameters.changes:
+        if num_labels >= target_label_index:
+            target_label_episode = num_episodes
+            break
+
     # return results
     return Namespace(
         answer=answer,
+        answer_episode=answer_episode,
         total_episodes=total_episodes,
         num_fallbacks=num_fallbacks,
         runtime=runtime,
+        target_label=target_label_color.name,
+        target_label_index=target_label_index,
+        target_label_episode=target_label_episode,
     )
 
-def create_experiment_1():
+def create_dynamic_experiment_pilot():
     set_seed(8675309)
     num_target_colors = 10
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
@@ -276,13 +291,11 @@ def create_experiment_1():
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
     )
-    return Experiment('experiment-1', parameter_space, run_experiment)
+    return Experiment('dynamic-pilot', parameter_space, run_dynamic_experiment)
 
 def main():
-    exp = create_experiment_1()
+    exp = create_dynamic_experiment_pilot()
     exp.run()
-
-
 
 if __name__ == '__main__':
     main()
