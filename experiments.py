@@ -178,7 +178,7 @@ def create_static_experiment():
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'num_trials', 'algorithm'],
             num_episodes=[1000, 10000, 100000],
-            num_labels=[10, 20, 50, 100, 200],
+            num_labels=[50, 100, 200],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
             num_trials=range(6),
@@ -251,19 +251,19 @@ def create_experiment_1():
     num_random_seeds = 10
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_neighbors', 'num_trials', 'algorithm'],
+    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_trials', 'algorithm'],
             num_episodes=[1000, 10000],
 
-            num_labels=[10, 20, 50, 100],
+            num_labels=[20, 50, 100],
 
             # will work across a variability of different types of colors
             random_seed=random_seeds,
 
-            num_neighbors=1,
+            num_neighbors=[1, 2, 3],
 
             num_trials=range(6),
 
-            algorithm=['brute-force', 'exact-heuristic'],
+            algorithm=['neighbor-heuristic'],
 
             target_color=target_colors,
             #target_color=MetaParameter((lambda num_target_colors:
