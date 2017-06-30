@@ -1,5 +1,5 @@
 from math import ceil, floor
-from random import seed as set_seed, randrange, random, randint
+from random import seed as set_seed, randrange, random
 from time import time
 
 from rdflib.plugins.sparql import prepareQuery
@@ -100,7 +100,6 @@ def run_neighbor_heuristic(parameters, episode_graph):
     # return min color and total episodes
     return min_time, min_color, total_episodes
 
-
 # making the graph is now different
 # function runs experiment according to parameters set within parameter space
 def run_static_experiment(parameters):
@@ -190,7 +189,6 @@ def create_static_experiment():
             color_sequence_type='random',
     )
     return Experiment('static', parameter_space, run_static_experiment)
-
 
 # generates a randomized nested list of time, num_label pairs
 def generate_changes(num_episodes, num_labels): # add number of changes?

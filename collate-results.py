@@ -2,8 +2,6 @@
 
 import re
 from csv import DictReader, DictWriter
-from os import listdir, getcwd
-from collections import defaultdict
 from argparse import ArgumentParser
 from datetime import datetime
 
