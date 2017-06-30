@@ -236,15 +236,6 @@ def run_dynamic_experiment(parameters):
     end_time = time() # end clock
     runtime = end_time - start_time # record total time in seconds
 
-    # find episode where target color label was introduced
-    target_label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
-    target_label_index = find_label_index(target_label_color.name)
-    target_label_episode = -1
-    for num_episodes, num_labels in parameters.changes:
-        if num_labels >= target_label_index:
-            target_label_episode = num_episodes
-            break
-
     # return results
     return Namespace(
         answer=answer,
@@ -252,9 +243,6 @@ def run_dynamic_experiment(parameters):
         total_episodes=total_episodes,
         num_fallbacks=num_fallbacks,
         runtime=runtime,
-        target_label=target_label_color.name,
-        target_label_index=target_label_index,
-        target_label_episode=target_label_episode,
     )
 
 def create_dynamic_experiment_pilot():
@@ -278,16 +266,19 @@ def create_dynamic_experiment_pilot():
 
             algorithm=['neighbor-heuristic'],
 
+            color_sequence_type='random',
+            # color_sequence_type=['random', 'walk'],
+
+            changes=(lambda num_episodes, num_labels: generate_changes(num_episodes, num_labels)),
+
             target_color=target_colors,
             #target_color=MetaParameter((lambda num_target_colors:
             #    [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]))
 
             target_color_hex=(lambda target_color: str(target_color)),
-
-            changes=(lambda num_episodes, num_labels: generate_changes(num_episodes, num_labels)),
-
-            color_sequence_type='random',
-            # color_sequence_type=['random', 'walk'],
+            target_label=(lambda num_labels, target_color: closest_color(target_color, num_colors=num_labels).name),
+            target_label_index=(lambda target_label: find_label_index(target_label)),
+            target_label_episode=(lambda changes, target_label_index: [episode for episode, label in changes if label >= target_label_index][0]),
     )
     return Experiment('dynamic-pilot', parameter_space, run_dynamic_experiment)
 
