@@ -34,6 +34,7 @@ SELECT DISTINCT ?neighbor_name
 
 # finds the color closest to target color and minimum distance
 def min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results):
+    min_time = -1
     for result in results:
         episode_color = Color(result[2].value, result[3].value, result[4].value)
         distance = parameters.target_color - episode_color
@@ -48,7 +49,6 @@ def run_brute_force(parameters, episode_graph):
     # query isolates all colors in graph
     # metrics
     total_episodes = 0
-    min_time = 0
     min_distance = 3 * 255
     min_color = None
 
@@ -65,7 +65,6 @@ def run_exact_heuristic(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
-    min_time = 0
     min_distance = 3 * 255
     min_color = None
 
@@ -85,7 +84,7 @@ def run_neighbor_heuristic(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
-    min_time = 0
+    min_time = -1
     min_distance = 3 * 255
     min_color = None
 
@@ -266,7 +265,7 @@ def create_dynamic_experiment_pilot():
     num_random_seeds = 10
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_trials', 'algorithm'],
+    parameter_space = PermutationSpace(['num_episodes', 'num_labels', 'target_color', 'random_seed', 'num_trials', 'algorithm', 'num_neighbors'],
             num_episodes=[1000, 10000],
 
             num_labels=[20, 50, 100],
