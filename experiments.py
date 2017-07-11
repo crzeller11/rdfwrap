@@ -26,10 +26,9 @@ NEIGHBOR_LABELS_QUERY = prepareQuery('''
 SELECT DISTINCT ?neighbor_name
     WHERE {
         ?parent nxrdf:neighbor ?neighbor ;
-                nxrdf:color_name ?name .
-        ?neighbor nxrdf:color_name ?neighbor_name .
+                nxrdf:name ?name .
+        ?neighbor nxrdf:name ?neighbor_name .
     }
-    ORDER BY ASC(?time)
 ''', initNs={'nxrdf':NXRDF.NAMESPACE})
 
 # finds the color closest to target color and minimum distance
@@ -49,6 +48,7 @@ def run_brute_force(parameters, episode_graph):
     # query isolates all colors in graph
     # metrics
     total_episodes = 0
+    min_time = -1
     min_distance = 3 * 255
     min_color = None
 
@@ -65,6 +65,7 @@ def run_exact_heuristic(parameters, episode_graph):
 
     # metrics
     total_episodes = 0
+    min_time = -1
     min_distance = 3 * 255
     min_color = None
 
