@@ -156,17 +156,19 @@ def create_static_experiment_pilot():
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'algorithm'],
+    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'algorithm', 'num_neighbors'],
             num_episodes=[1000, 10000, 100000],
             num_labels=[10, 20, 50, 100, 200],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
-            num_neighbors=0,
-            algorithm=['brute-force', 'exact-heuristic'],
+            num_neighbors=range(4),
+            algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
             target_color=target_colors,
             target_color_hex=(lambda target_color: str(target_color)),
             color_sequence_type='random',
     )
+    parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or num_neighbors == 0))
+    parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm != 'neighbor-heuristic' or num_neighbors > 0))
     return Experiment('static-pilot', parameter_space, run_static_experiment)
 
 def create_static_experiment():
