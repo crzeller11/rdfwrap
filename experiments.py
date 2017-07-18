@@ -171,10 +171,9 @@ def create_static_experiment_pilot():
 
 def create_static_experiment():
     set_seed(8675309)
-    num_target_colors = 100
-    num_random_seeds = 100
+    num_target_colors = 50
+    num_random_seeds = 50
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
-
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
     parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'num_trials', 'algorithm'],
@@ -182,7 +181,7 @@ def create_static_experiment():
             num_labels=[50, 100, 200],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
-            num_trials=range(6),
+            num_trials=range(5),
             algorithm=['brute-force', 'exact-heuristic'],
             target_color=target_colors,
             target_color_hex=(lambda target_color: str(target_color)),
