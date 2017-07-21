@@ -10,7 +10,7 @@ read -d '' 'JOB_SCRIPT' << EOF
 
 # JOB NAME
 #
-#PBS -N python_test
+#PBS -N pbs-static
 
 # QUEUE NAME
 #

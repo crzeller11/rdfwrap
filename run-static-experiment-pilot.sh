@@ -10,7 +10,7 @@ read -d '' 'JOB_SCRIPT' << EOF
 
 # JOB NAME
 #
-#PBS -N python_test
+#PBS -N pbs-static-pilot
 
 # QUEUE NAME
 #
@@ -81,7 +81,7 @@ pbs_startjob() {
 
 	cd "\$PBS_O_WORKDIR" && \
 	source "\$VENV/bin/activate" && \
-	python3 static-experiment-pilot-main.py \${random_seed_index}
+	python3 static-pilot-main.py \${random_seed_index}
 	deactivate
 }
 
