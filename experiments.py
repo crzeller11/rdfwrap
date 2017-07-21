@@ -267,7 +267,7 @@ def create_dynamic_experiment_pilot():
             # will work across a variability of different types of colors
             random_seed=random_seeds,
 
-            num_neighbors=[1, 2, 3],
+            num_neighbors=range(4),
 
             num_trials=range(1),
 
