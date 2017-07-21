@@ -1,6 +1,7 @@
 from math import ceil, floor
 from random import seed as set_seed, randrange, random
 from time import time
+from textwrap import dedent
 
 from rdflib.plugins.sparql import prepareQuery
 
@@ -10,8 +11,9 @@ from experiment import Experiment
 from permspace import PermutationSpace, Namespace
 from rdfwrap import NXRDF
 
-EXACT_LABEL_QUERY = prepareQuery('''
-SELECT DISTINCT ?time ?name ?r ?g ?b
+EXACT_LABEL_QUERY = prepareQuery(
+    dedent('''
+    SELECT DISTINCT ?time ?name ?r ?g ?b
     WHERE {
         ?episode nxrdf:episode ?time ;
                  nxrdf:color_name ?name ;
@@ -19,17 +21,20 @@ SELECT DISTINCT ?time ?name ?r ?g ?b
                  nxrdf:green ?g ;
                  nxrdf:blue ?b .
     }
-    ORDER BY ASC(?time)
-''', initNs={'nxrdf':NXRDF.NAMESPACE})
+    ORDER BY ASC(?time)'''),
+    initNs={'nxrdf':NXRDF.NAMESPACE}
+)
 
-NEIGHBOR_LABELS_QUERY = prepareQuery('''
-SELECT DISTINCT ?neighbor_name
+NEIGHBOR_LABELS_QUERY = prepareQuery(
+    dedent('''
+    SELECT DISTINCT ?neighbor_name
     WHERE {
         ?parent nxrdf:neighbor ?neighbor ;
                 nxrdf:name ?name .
         ?neighbor nxrdf:name ?neighbor_name .
-    }
-''', initNs={'nxrdf':NXRDF.NAMESPACE})
+    }'''),
+    initNs={'nxrdf':NXRDF.NAMESPACE}
+)
 
 # finds the color closest to target color and minimum distance
 def min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results):
@@ -178,13 +183,14 @@ def create_static_experiment():
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'num_trials', 'algorithm'],
+    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'num_trials', 'algorithm', 'num_neighbors'],
             num_episodes=[1000, 10000, 100000],
             num_labels=[50, 100, 200],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
+            num_neighbors=range(4),
             num_trials=range(5),
-            algorithm=['brute-force', 'exact-heuristic'],
+            algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
             target_color=target_colors,
             target_color_hex=(lambda target_color: str(target_color)),
             color_sequence_type='random',
@@ -263,9 +269,9 @@ def create_dynamic_experiment_pilot():
 
             num_neighbors=[1, 2, 3],
 
-            num_trials=range(6),
+            num_trials=range(1),
 
-            algorithm=['neighbor-heuristic'],
+            algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
 
             color_sequence_type='random',
             # color_sequence_type=['random', 'walk'],
@@ -281,6 +287,8 @@ def create_dynamic_experiment_pilot():
             target_label_index=(lambda target_label: find_label_index(target_label)),
             target_label_episode=(lambda changes, target_label_index: [episode for episode, label in changes if label >= target_label_index][0]),
     )
+    parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or num_neighbors == 0))
+    parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm != 'neighbor-heuristic' or num_neighbors > 0))
     return Experiment('dynamic-pilot', parameter_space, run_dynamic_experiment)
 
 def main():
