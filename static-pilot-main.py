@@ -1,7 +1,7 @@
 from sys import argv
 
 from permspace import Namespace
-from experiments import create_static_experiment_pilot
+from exp_static_pilot import create_static_experiment_pilot
 
 def main(random_seed_index):
     exp = create_static_experiment_pilot()
