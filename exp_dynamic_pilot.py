@@ -25,7 +25,7 @@ def create_dynamic_experiment_pilot():
             num_labels=[20, 50, 100],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
-            num_neighbors=range(4),
+            num_neighbors=[0, 2, 5, 10],
             always_use_neighbors=[True, False],
             trial=range(1),
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
