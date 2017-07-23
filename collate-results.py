@@ -15,22 +15,22 @@ def main():
     fieldnames = None
     result_files = []
 
-    for file in args.csvs:
-        match = re.match(r'^(?P<experiment_name>[a-z0-9_-]*)-(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.-]*)-results.csv$', file)
-        assert match, 'file does not conform to "<experiment>-<timestamp>-results.csv" naming: {}'.format(file)
+    for input_file in args.csvs:
+        match = re.match(r'^(?P<experiment_name>[a-z0-9_-]*)-(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.-]*)-results.csv$', input_file)
+        assert match, 'file does not conform to "<experiment>-<timestamp>-results.csv" naming: {}'.format(input_file)
         date = datetime.strptime(match.group('timestamp'), '%Y-%m-%dT%H:%M:%S.%f')
         if experiment_name is None:
             experiment_name = match.group('experiment_name')
             latest = date
-            with open(file) as fd:
+            with open(input_file) as fd:
                 fieldnames = DictReader(fd, delimiter='\t').fieldnames
         else:
-            assert experiment_name == match.group('experiment_name'), 'file has different experiment name: {}'.format(file)
+            assert experiment_name == match.group('experiment_name'), 'file has different experiment name: {}'.format(input_file)
             if latest < date:
                 latest = date
-            with open(file) as fd:
-                assert fieldnames == DictReader(fd, delimiter='\t').fieldnames, 'file has different fields: {}'.format(file)
-        result_files.append(file)
+            with open(input_file) as fd:
+                assert fieldnames == DictReader(fd, delimiter='\t').fieldnames, 'file has different fields: {}'.format(input_file)
+        result_files.append(input_file)
 
     assert fieldnames is not None, 'could not determine field names'
 
@@ -38,8 +38,8 @@ def main():
     with open(output_file, 'w') as out_fd:
         writer = DictWriter(out_fd, fieldnames=fieldnames)
         writer.writeheader()
-        for file in result_files:
-            with open(file) as in_fd:
+        for input_file in result_files:
+            with open(input_file) as in_fd:
                 reader = DictReader(in_fd, delimiter='\t')
                 for row in reader:
                     writer.writerow(row)
