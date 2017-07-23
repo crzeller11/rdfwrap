@@ -80,12 +80,13 @@ def run_exact_heuristic(parameters, episode_graph):
 
     return min_time, min_color, total_episodes
 
-def run_neighbor_heuristic(parameters, episode_graph):
+def run_neighbor_heuristic(parameters, episode_graph, knn=None):
     # find semantic label of target color
     label_color = closest_color(parameters.target_color, num_colors=parameters.num_labels)
 
     # isolate all neighbor labels of target semantic label
-    knn = create_knn(parameters.num_labels, parameters.num_neighbors)
+    if knn is None:
+        knn = create_knn(parameters.num_labels, parameters.num_neighbors)
     neighbors = knn.query(NEIGHBOR_LABELS_QUERY, initBindings={'name':label_color.name})
 
     # metrics
@@ -121,6 +122,8 @@ def run_dynamic_experiment(parameters):
         color_list = random_walk(parameters.num_episodes)
     episode_graph = color_episodes_with_changes(color_list, parameters.changes)
 
+    knn = create_knn(parameters.num_labels, parameters.num_neighbors)
+
     # initializations
     answer = None
     total_episodes = 0
@@ -136,7 +139,7 @@ def run_dynamic_experiment(parameters):
 
     # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
     if parameters.algorithm == 'neighbor-heuristic' and (parameters.always_use_neighbors or answer is None):
-        answer_episode, answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph)
+        answer_episode, answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph, knn=knn)
         total_episodes += section_episodes
         num_algorithms += 1
 
