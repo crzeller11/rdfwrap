@@ -12,21 +12,23 @@ def create_static_experiment_pilot():
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
-    parameter_space = PermutationSpace(['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'trial', 'algorithm', 'num_neighbors'],
+    parameter_space = PermutationSpace(
+            ['random_seed_index', 'num_episodes', 'num_labels', 'target_color', 'trial', 'algorithm', 'num_neighbors', 'always_use_neighbors'],
             num_episodes=[1000, 10000, 100000],
-            num_labels=[10, 20, 50, 100, 200],
+            num_labels=[20, 50, 100],
             random_seed_index=range(num_random_seeds),
             random_seed=(lambda random_seed_index: random_seeds[random_seed_index]),
-            num_neighbors=range(4),
+            num_neighbors=[0, 2, 5, 10],
+            always_use_neighbors=[True, False],
             trial=range(1),
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
             color_sequence_type='random',
             target_color=target_colors,
             target_label=(lambda num_labels, target_color: closest_color(target_color, num_colors=num_labels).name),
             target_label_index=(lambda target_label: find_label_index(target_label)),
-            target_label_episode=(lambda changes, target_label_index: [episode for episode, label in changes if label >= target_label_index][0]),
     )
     parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or num_neighbors == 0))
+    parameter_space.add_filter(lambda algorithm, always_use_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or always_use_neighbors))
     parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm != 'neighbor-heuristic' or num_neighbors > 0))
     return Experiment('static-pilot', parameter_space, run_static_experiment)
 
