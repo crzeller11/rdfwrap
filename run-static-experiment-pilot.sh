@@ -49,7 +49,7 @@ read -d '' 'JOB_SCRIPT' << EOF
 #  PBS_L_GLOBALWORK is the global work directory of the cluster
 #  PBS_L_LOCALWORK  is the local work directory of the cluster
 
-PBS_L_NODENUMBER=\`wc -l < $PBS_NODEFILE\`
+PBS_L_NODENUMBER=\`wc -l < \$PBS_NODEFILE\`
 
 # Function to echo informational output
 pbs_infoutput() {
