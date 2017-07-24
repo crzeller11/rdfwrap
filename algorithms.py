@@ -139,7 +139,11 @@ def run_dynamic_experiment(parameters):
 
     # if exact heuristic yields no result and algorithm is neighbor heuristic, add one to episodes and fallbacks
     if parameters.algorithm == 'neighbor-heuristic' and (parameters.always_use_neighbors or answer is None):
-        answer_episode, answer, section_episodes = run_neighbor_heuristic(parameters, episode_graph, knn=knn)
+        new_answer_episode, new_answer, new_section_episodes = run_neighbor_heuristic(parameters, episode_graph, knn=knn)
+        if answer is None or (parameters.target_color - new_answer < parameters.target_color - answer):
+            answer_episode = new_answer_episode
+            answer = new_answer
+            section_episodes = new_section_episodes
         total_episodes += section_episodes
         num_algorithms += 1
 
