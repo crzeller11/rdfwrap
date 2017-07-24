@@ -48,7 +48,7 @@ def main(random_seed_index):
     # uncomment to simply print parameters
     #exp.function = (lambda parameters: Namespace())
 
-    if random_seed_index < 9:
+    if random_seed_index < 4:
         exp.run_between(
             Namespace(random_seed_index=random_seed_index),
             Namespace(random_seed_index=random_seed_index+1),
