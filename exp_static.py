@@ -7,8 +7,8 @@ from algorithms import run_static_experiment
 
 def create_static_experiment():
     set_seed(8675309)
-    num_target_colors = 50
     num_random_seeds = 50
+    num_target_colors = 50
     target_colors = [Color(randrange(256), randrange(256), randrange(256)) for i in range(num_target_colors)]
     random_seeds = [random() for i in range(num_random_seeds)]
     # parameter space is an instance of Permutation space. Allows us to manipulate many variables in experiment.
