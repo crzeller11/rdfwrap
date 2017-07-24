@@ -160,6 +160,7 @@ def run_dynamic_experiment(parameters):
 
     # return results
     return Namespace(
+        episodes=[str(color) for color in color_list],
         answer=answer,
         answer_episode=answer_episode,
         total_episodes=total_episodes,
