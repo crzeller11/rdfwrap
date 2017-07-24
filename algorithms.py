@@ -101,7 +101,11 @@ def run_neighbor_heuristic(parameters, episode_graph, knn=None):
 
         # loop through each color within neighbor label and find min color and total episodes
         results = episode_graph.query(EXACT_LABEL_QUERY, initBindings={'name':neighbor_name})
-        min_time, min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
+        new_min_time, new_min_color, total_episodes = min_color_total_episodes(total_episodes, min_distance, min_color, parameters, results)
+
+        if min_color is None or (parameters.target_color - new_min_color < parameters.target_color - min_color):
+            min_time = new_min_time
+            min_color = new_min_color
 
     # return min color and total episodes
     return min_time, min_color, total_episodes
@@ -143,7 +147,7 @@ def run_dynamic_experiment(parameters):
         if answer is None or (parameters.target_color - new_answer < parameters.target_color - answer):
             answer_episode = new_answer_episode
             answer = new_answer
-            section_episodes = new_section_episodes
+        section_episodes = new_section_episodes
         total_episodes += section_episodes
         num_algorithms += 1
 
