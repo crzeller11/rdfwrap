@@ -46,7 +46,7 @@ def main(random_seed_index):
     exp = create_dynamic_experiment_neighbors_dissection()
 
     # uncomment to simply print parameters
-    exp.function = (lambda parameters: Namespace())
+    #exp.function = (lambda parameters: Namespace())
 
     if random_seed_index < 9:
         exp.run_between(
