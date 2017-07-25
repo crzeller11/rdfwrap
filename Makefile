@@ -1,5 +1,18 @@
 .INTERMEDIATE: color-survey.sqlite mainsurvey_sqldump.txt colorsurvey.tar.gz
 
+.PHONY: results
+
+results: static-pilot-latest.csv static-latest.csv dynamic-pilot-latest.csv dynamic-neighbors-latest.csv
+
+dynamic-neighbors-latest.csv: dynamic-neighbors-*-collated.csv
+	cp $(shell ls $^ | tail -n 1) $@
+
+dynamic-pilot-latest.csv: dynamic-pilot-*-collated.csv
+	cp $(shell ls $^ | tail -n 1) $@
+
+static-latest.csv: static-2*-collated.csv
+	cp $(shell ls $^ | tail -n 1) $@
+
 static-pilot-latest.csv: static-pilot-*-collated.csv
 	cp $(shell ls $^ | tail -n 1) $@
 
