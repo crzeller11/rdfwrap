@@ -81,7 +81,7 @@ pbs_startjob() {
 
 	cd "\$PBS_O_WORKDIR" && \
 	source "\$VENV/bin/activate" && \
-	python3 dynamic-pilot-main.py \${random_seed_index}
+	python3 exp_dynamic.py \${random_seed_index}
 	deactivate
 }
 
@@ -90,6 +90,6 @@ pbs_infoutput
 pbs_startjob
 EOF
 
-for random_seed_index in $(seq 0 9); do
+for random_seed_index in $(seq 0 49); do
 	echo "$JOB_SCRIPT" | qsub -v random_seed_index="$random_seed_index" -
 done

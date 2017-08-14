@@ -1,11 +1,18 @@
+from math import ceil, floor
 from random import seed as set_seed, randrange, random
 
 from color import Color, closest_color, find_label_index
 from experiment import Experiment
 from permspace import PermutationSpace
-from algorithms import run_static_experiment
+from algorithms import run_dynamic_experiment
 
-def create_static_experiment():
+# generates a randomized nested list of time, num_label pairs
+def generate_changes(num_episodes, num_labels): # add number of changes?
+    init_labels = ceil(num_labels / 10)
+    episodes_per = num_episodes / (num_labels - init_labels + 1)
+    return [[floor(i * episodes_per), init_labels + i] for i in range(num_labels - init_labels + 1)]
+
+def create_dynamic_experiment():
     set_seed(8675309)
     num_random_seeds = 50
     num_target_colors = 50
@@ -24,23 +31,25 @@ def create_static_experiment():
             algorithm=['brute-force', 'exact-heuristic', 'neighbor-heuristic'],
             color_sequence_type='random',
             target_color=target_colors,
+            changes=(lambda num_episodes, num_labels: generate_changes(num_episodes, num_labels)),
             target_label=(lambda num_labels, target_color: closest_color(target_color, num_colors=num_labels).name),
             target_label_index=(lambda target_label: find_label_index(target_label)),
+            target_label_episode=(lambda changes, target_label_index: [episode for episode, label in changes if label >= target_label_index][0]),
     )
     parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or num_neighbors == 0))
     parameter_space.add_filter(lambda algorithm, always_use_neighbors: (algorithm not in ('brute-force', 'exact-heuristic') or always_use_neighbors))
     parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm != 'neighbor-heuristic' or num_neighbors > 0))
-    return Experiment('static', parameter_space, run_static_experiment)
+    return Experiment('dynamic', parameter_space, run_dynamic_experiment)
 
 def main(random_seed_index=None):
-    exp = create_static_experiment()
+    exp = create_dynamic_experiment()
 
     # uncomment to simply print parameters
     #exp.function = (lambda parameters: parameters)
 
     if random_seed_index is None:
         exp.run()
-    if random_seed_index < 49:
+    elif random_seed_index < 49:
         exp.run_between(
             Namespace(random_seed_index=random_seed_index),
             Namespace(random_seed_index=random_seed_index+1),

@@ -32,9 +32,27 @@ def create_static_experiment_pilot():
     parameter_space.add_filter(lambda algorithm, num_neighbors: (algorithm != 'neighbor-heuristic' or num_neighbors > 0))
     return Experiment('static-pilot', parameter_space, run_static_experiment)
 
-def main():
+def main(random_seed_index=None):
     exp = create_static_experiment_pilot()
-    exp.run()
+
+    # uncomment to simply print parameters
+    #exp.function = (lambda parameters: parameters)
+
+    if random_seed_index is None:
+        exp.run()
+    elif random_seed_index < 4:
+        exp.run_between(
+            Namespace(random_seed_index=random_seed_index),
+            Namespace(random_seed_index=random_seed_index+1),
+        )
+    else:
+        exp.run_from(Namespace(random_seed_index=random_seed_index))
 
 if __name__ == '__main__':
-    main()
+    if len(argv) == 1:
+        main()
+    elif len(argv) != 2:
+        print('Error: incorrect usage: {}'.format(' '.join(argv)))
+        exit(1)
+    else:
+        main(int(argv[1]))

@@ -82,6 +82,7 @@ pbs_startjob() {
 	cd "\$PBS_O_WORKDIR" && \
 	source "\$VENV/bin/activate" && \
 	python3 static-pilot-main.py \${random_seed_index}
+	python3 exp_static_pilot.py \${random_seed_index}
 	deactivate
 }
 
